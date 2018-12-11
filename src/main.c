@@ -3,15 +3,21 @@
 #include "Socket.h"
 
 int main() {
-	printf("Hello World\n");
 	Socket socket;
-	// printf("%d\n", connected(&socket));
-	connectAndBind(&socket, "192.168.25.1", 9002);
+	setEndian(&socket, ENDIAN_BIG);
+	connectAndBind(&socket, "192.168.137.1", 9002);
 	if (connected(&socket))
 	{
 		printf("connected\n");
-		char buf[2048];
 
+		writeInt(&socket, 666);
+		writeString(&socket, "Hello~\n");
+
+		int val = 0;
+		readInt(&socket, &val);
+		printf("%d\n", val);
+
+		char buf[2048];
 		readString(&socket, buf);
 		printf("%s\n", buf);
 

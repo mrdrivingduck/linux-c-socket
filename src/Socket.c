@@ -37,8 +37,20 @@ int connectAndBind(Socket *sock, char ipAddr[], int port)
     dest.sin_addr.s_addr = htonl(INADDR_ANY);
     inet_aton(ipAddr, &(dest.sin_addr));
 
-    sock->_bind = connect(sock->_fd, (struct sockaddr *) &dest, sizeof(dest));
+    sock->_bind = connect(sock->_fd, (struct sockaddr *)&dest, sizeof(dest));
     return sock->_bind;
+}
+
+void setEndian(Socket *sock, int endian)
+{
+    if (endian == ENDIAN_BIG)
+    {
+        sock->_endian = ENDIAN_BIG;
+    }
+    else
+    {
+        sock->_endian = ENDIAN_LITTLE;
+    }
 }
 
 void disconnect(Socket *sock)
@@ -47,24 +59,78 @@ void disconnect(Socket *sock)
     sock->_bind = -1;
 }
 
-int readAll(Socket *sock, char buf[])
-{
-    return read(sock->_fd, buf, MAX_BUFFER_SIZE);
-}
-
 int readString(Socket *sock, char str[])
 {
     int count = 0;
-    char temp;
+    char temp = 0;
     while (read(sock->_fd, &temp, 1))
     {
+        if (temp == '\0')
+        {
+            break;
+        }
         str[count] = temp;
         count++;
-        printf("%c\n", temp);
-        if (temp == '\0')
+    }
+    str[count] = '\0';
+    return count;
+}
+
+int readInt(Socket *sock, int *val)
+{
+    int count = 0;
+    *val = 0;
+    char temp = 0;
+    while (read(sock->_fd, &temp, 1))
+    {
+        if (sock->_endian == ENDIAN_BIG)
+        {
+            (*val) |= ((temp & 0x0FF) << (8 * (sizeof(int) - 1 - count)));
+        }
+        else
+        {
+            (*val) |= ((temp & 0x0FF) << (8 * count));
+        }
+
+        count++;
+        if (count == sizeof(int))
         {
             break;
         }
     }
     return count;
+}
+
+int writeInt(Socket *sock, int val)
+{
+    int count = 0;
+    char temp = 0;
+    if (sock->_endian == ENDIAN_BIG)
+    {
+        temp = ((val >> 24) & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+        temp = ((val >> 16) & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+        temp = ((val >> 8) & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+        temp = (val & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+    }
+    else 
+    {
+        temp = (val & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+        temp = ((val >> 8) & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+        temp = ((val >> 16) & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+        temp = ((val >> 24) & 0x0FF);
+        count += write(sock->_fd, &temp, 1);
+    }
+    return count;
+}
+
+int writeString(Socket *sock, char str[])
+{
+    return write(sock->_fd, str, strlen(str));
 }
