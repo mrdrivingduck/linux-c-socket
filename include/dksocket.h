@@ -8,7 +8,6 @@
 #define ENDIAN_BIG 0
 
 #define MAX_BUFFER_SIZE 2048
-// char buf[BUFFER_SIZE];
 
 typedef struct Socket
 {
@@ -21,7 +20,7 @@ typedef struct Socket
 
 int connected(Socket *sock);
 
-int connectAndBind(Socket *sock, char ipAddr[], int port);
+int connectAndBind(Socket *sock, char ipAddr[], int port, long timeout_sec);
 
 void disconnect(Socket *sock);
 

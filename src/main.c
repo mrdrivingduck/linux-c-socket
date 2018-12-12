@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include "Socket.h"
+#include "dksocket.h"
 
 int main() {
 	Socket socket;
 	setEndian(&socket, ENDIAN_BIG);
-	connectAndBind(&socket, "192.168.137.1", 9002);
+	connectAndBind(&socket, "192.168.137.1", 9002, 2);
 	if (connected(&socket))
 	{
 		printf("connected\n");

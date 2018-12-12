@@ -2,10 +2,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <arpa/inet.h>
-#include "Socket.h"
+#include "dksocket.h"
 
 int connected(Socket *sock)
 {
@@ -19,7 +23,7 @@ int connected(Socket *sock)
     }
 }
 
-int connectAndBind(Socket *sock, char ipAddr[], int port)
+int connectAndBind(Socket *sock, char ipAddr[], int port, long timeout_sec)
 {
     strcpy(sock->_ipAddr, ipAddr);
     sock->_port = port;
@@ -35,9 +39,34 @@ int connectAndBind(Socket *sock, char ipAddr[], int port)
     dest.sin_family = AF_INET;
     dest.sin_port = htons(port);
     dest.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    // Set fd into non-block mode
+    fcntl(sock->_fd, F_SETFL, O_NONBLOCK);
     inet_aton(ipAddr, &(dest.sin_addr));
 
-    sock->_bind = connect(sock->_fd, (struct sockaddr *)&dest, sizeof(dest));
+    sock->_bind = connect(sock->_fd, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+    if (sock->_bind == -1)
+    {
+        if (errno != EINPROGRESS)
+        {
+            close(sock->_fd);
+            return sock->_bind;
+        }
+
+        fd_set writeSet;
+        FD_ZERO(&writeSet);
+        FD_SET(sock->_fd, &writeSet);
+        struct timeval timeout = {timeout_sec, 0};
+
+        if (select(sock->_fd + 1, NULL, &writeSet, NULL, &timeout))
+        {
+            sock->_bind = CONNECTED;
+        }
+    }
+
+    int flags = fcntl(sock->_fd, F_GETFL);
+    flags &= ~O_NONBLOCK;
+    fcntl(sock->_fd, F_SETFL, flags);
     return sock->_bind;
 }
 
@@ -55,8 +84,11 @@ void setEndian(Socket *sock, int endian)
 
 void disconnect(Socket *sock)
 {
-    close(sock->_bind);
-    sock->_bind = -1;
+    if (connected(sock))
+    {
+        close(sock->_bind);
+        sock->_bind = -1;
+    }
 }
 
 int readString(Socket *sock, char str[])
