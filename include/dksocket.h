@@ -26,9 +26,12 @@ void disconnect(Socket *sock);
 
 void setEndian(Socket *sock, int endian);
 
+int readLine(Socket *socket, char str[]);
 int readString(Socket *socket, char str[]);
 int readInt(Socket *socket, int *val);
+int readFloat(Socket *socket, float *val);
 
+int writeLine(Socket *socket, char str[]);
 int writeString(Socket *socket, char str[]);
 int writeInt(Socket *socket, int val);
 

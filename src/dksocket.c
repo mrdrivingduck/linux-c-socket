@@ -91,6 +91,22 @@ void disconnect(Socket *sock)
     }
 }
 
+int readLine(Socket *sock, char str[])
+{
+    int count = 0;
+    char temp = 0;
+    while (read(sock->_fd, &temp, 1))
+    {
+        if (temp == '\n')
+        {
+            break;
+        }
+        str[count] = temp;
+        count++;
+    }
+    return count;
+}
+
 int readString(Socket *sock, char str[])
 {
     int count = 0;
@@ -111,17 +127,17 @@ int readString(Socket *sock, char str[])
 int readInt(Socket *sock, int *val)
 {
     int count = 0;
-    *val = 0;
     char temp = 0;
+    char buf[sizeof(int)];
     while (read(sock->_fd, &temp, 1))
     {
         if (sock->_endian == ENDIAN_BIG)
         {
-            (*val) |= ((temp & 0x0FF) << (8 * (sizeof(int) - 1 - count)));
+            buf[sizeof(int) - 1 - count] = temp;
         }
         else
         {
-            (*val) |= ((temp & 0x0FF) << (8 * count));
+            buf[count] = temp;
         }
 
         count++;
@@ -130,34 +146,54 @@ int readInt(Socket *sock, int *val)
             break;
         }
     }
+    memcpy(val, buf, sizeof(int));
+    return count;
+}
+
+int readFloat(Socket *sock, float *val)
+{
+    int count = 0;
+    char temp = 0;
+    char buf[sizeof(float)];
+    while (read(sock->_fd, &temp, 1))
+    {
+        if (sock->_endian == ENDIAN_BIG)
+        {
+            buf[sizeof(float) - 1 - count] = temp;
+        }
+        else
+        {
+            buf[count] = temp;
+        }
+
+        count++;
+        if (count == sizeof(float))
+        {
+            break;
+        }
+    }
+    memcpy(val, buf, sizeof(float));
     return count;
 }
 
 int writeInt(Socket *sock, int val)
 {
     int count = 0;
-    char temp = 0;
+    char buf[sizeof(int)];
+    memcpy(buf, &val, sizeof(int));
     if (sock->_endian == ENDIAN_BIG)
     {
-        temp = ((val >> 24) & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
-        temp = ((val >> 16) & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
-        temp = ((val >> 8) & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
-        temp = (val & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
+        for (unsigned int i = 0; i < sizeof(int); i++)
+        {
+            count += write(sock->_fd, &buf[sizeof(int)-1-i], 1);
+        }
     }
     else 
     {
-        temp = (val & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
-        temp = ((val >> 8) & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
-        temp = ((val >> 16) & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
-        temp = ((val >> 24) & 0x0FF);
-        count += write(sock->_fd, &temp, 1);
+        for (unsigned int i = 0; i < sizeof(int); i++)
+        {
+            count += write(sock->_fd, &buf[i], 1);
+        }
     }
     return count;
 }
@@ -165,4 +201,12 @@ int writeInt(Socket *sock, int val)
 int writeString(Socket *sock, char str[])
 {
     return write(sock->_fd, str, strlen(str));
+}
+
+int writeLine(Socket *sock, char str[])
+{
+    int byte = 0;
+    byte += write(sock->_fd, str, strlen(str));
+    byte += write(sock->_fd, "\n", 1);
+    return byte;
 }

@@ -11,15 +11,19 @@ int main() {
 		printf("connected\n");
 
 		writeInt(&socket, 666);
-		writeString(&socket, "Hello~\n");
+		writeLine(&socket, "Hello~");
 
 		int val = 0;
 		readInt(&socket, &val);
 		printf("%d\n", val);
 
 		char buf[2048];
-		readString(&socket, buf);
+		readLine(&socket, buf);
 		printf("%s\n", buf);
+
+		float fl = 0.0f;
+		readFloat(&socket, &fl);
+		printf("%f\n", fl);
 
 		disconnect(&socket);
 	}
