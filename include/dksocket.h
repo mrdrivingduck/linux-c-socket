@@ -1,3 +1,10 @@
+/**************************************
+ * 
+ * @author Mr Dk.
+ * @version 2018.12.13
+ * 
+ **************************************/
+
 #ifndef SOCKET_H_
 #define SOCKET_H_
 
@@ -34,5 +41,6 @@ int readFloat(Socket *socket, float *val);
 int writeLine(Socket *socket, char str[]);
 int writeString(Socket *socket, char str[]);
 int writeInt(Socket *socket, int val);
+int writeFloat(Socket *socket, float val);
 
 #endif

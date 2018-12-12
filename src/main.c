@@ -12,6 +12,7 @@ int main() {
 
 		writeInt(&socket, 666);
 		writeLine(&socket, "Hello~");
+		writeFloat(&socket, 3.8f);
 
 		int val = 0;
 		readInt(&socket, &val);

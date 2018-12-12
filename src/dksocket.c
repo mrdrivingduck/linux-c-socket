@@ -1,3 +1,9 @@
+/**************************************
+ * 
+ * @author Mr Dk.
+ * @version 2018.12.13
+ * 
+ **************************************/
 
 #include <stdio.h>
 #include <unistd.h>
@@ -198,15 +204,37 @@ int writeInt(Socket *sock, int val)
     return count;
 }
 
+int writeFloat(Socket *sock, float val)
+{
+    int count = 0;
+    char buf[sizeof(float)];
+    memcpy(buf, &val, sizeof(float));
+    if (sock->_endian == ENDIAN_BIG)
+    {
+        for (unsigned int i = 0; i < sizeof(float); i++)
+        {
+            count += write(sock->_fd, &buf[sizeof(float)-1-i], 1);
+        }
+    }
+    else 
+    {
+        for (unsigned int i = 0; i < sizeof(float); i++)
+        {
+            count += write(sock->_fd, &buf[i], 1);
+        }
+    }
+    return count;
+}
+
 int writeString(Socket *sock, char str[])
 {
-    return write(sock->_fd, str, strlen(str));
+    return write(sock->_fd, str, strlen(str) + 1);
 }
 
 int writeLine(Socket *sock, char str[])
 {
-    int byte = 0;
-    byte += write(sock->_fd, str, strlen(str));
-    byte += write(sock->_fd, "\n", 1);
-    return byte;
+    int count = 0;
+    count += write(sock->_fd, str, strlen(str) + 1);
+    count += write(sock->_fd, "\n", 1);
+    return count;
 }
