@@ -19,7 +19,7 @@
 
 int connected(Socket *sock)
 {
-    if (sock->_fd < 0 || sock->_bind < 0)
+    if (sock->_fd <= 0 || sock->_bind <= 0)
     {
         return UNCONNECTED;
     }
