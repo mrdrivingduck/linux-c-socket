@@ -101,7 +101,7 @@ int readLine(Socket *sock, char str[])
 {
     int count = 0;
     char temp = 0;
-    while (read(sock->_fd, &temp, 1))
+    while (recv(sock->_fd, &temp, 1, MSG_WAITALL) > 0)
     {
         if (temp == '\n')
         {
@@ -117,7 +117,7 @@ int readString(Socket *sock, char str[])
 {
     int count = 0;
     char temp = 0;
-    while (read(sock->_fd, &temp, 1))
+    while (recv(sock->_fd, &temp, 1, MSG_WAITALL) > 0)
     {
         if (temp == '\0')
         {
@@ -135,7 +135,7 @@ int readInt(Socket *sock, int *val)
     int count = 0;
     char temp = 0;
     char buf[sizeof(int)];
-    while (read(sock->_fd, &temp, 1))
+    while (recv(sock->_fd, &temp, 1, MSG_WAITALL) > 0)
     {
         if (sock->_endian == ENDIAN_BIG)
         {
@@ -161,7 +161,7 @@ int readFloat(Socket *sock, float *val)
     int count = 0;
     char temp = 0;
     char buf[sizeof(float)];
-    while (read(sock->_fd, &temp, 1))
+    while (recv(sock->_fd, &temp, 1, MSG_WAITALL) > 0)
     {
         if (sock->_endian == ENDIAN_BIG)
         {
@@ -191,14 +191,20 @@ int writeInt(Socket *sock, int val)
     {
         for (unsigned int i = 0; i < sizeof(int); i++)
         {
-            count += write(sock->_fd, &buf[sizeof(int)-1-i], 1);
+            if (send(sock->_fd, &buf[sizeof(int)-1-i], 1, MSG_WAITALL) > 0)
+            {
+                count++;
+            }
         }
     }
     else 
     {
         for (unsigned int i = 0; i < sizeof(int); i++)
         {
-            count += write(sock->_fd, &buf[i], 1);
+            if (send(sock->_fd, &buf[i], 1, MSG_WAITALL) > 0)
+            {
+                count++;
+            }
         }
     }
     return count;
@@ -213,14 +219,20 @@ int writeFloat(Socket *sock, float val)
     {
         for (unsigned int i = 0; i < sizeof(float); i++)
         {
-            count += write(sock->_fd, &buf[sizeof(float)-1-i], 1);
+            if (send(sock->_fd, &buf[sizeof(float)-1-i], 1, MSG_WAITALL) > 0)
+            {
+                count++;
+            }
         }
     }
     else 
     {
         for (unsigned int i = 0; i < sizeof(float); i++)
         {
-            count += write(sock->_fd, &buf[i], 1);
+            if (send(sock->_fd, &buf[i], 1, MSG_WAITALL))
+            {
+                count++;
+            }
         }
     }
     return count;
@@ -228,13 +240,13 @@ int writeFloat(Socket *sock, float val)
 
 int writeString(Socket *sock, char str[])
 {
-    return write(sock->_fd, str, strlen(str) + 1);
+    return send(sock->_fd, str, strlen(str) + 1, MSG_WAITALL);
 }
 
 int writeLine(Socket *sock, char str[])
 {
     int count = 0;
-    count += write(sock->_fd, str, strlen(str) + 1);
-    count += write(sock->_fd, "\n", 1);
+    count += send(sock->_fd, str, strlen(str) + 1, MSG_WAITALL);
+    count += send(sock->_fd, "\n", 1, MSG_WAITALL);
     return count;
 }
